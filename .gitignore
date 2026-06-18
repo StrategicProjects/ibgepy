@@ -15,6 +15,9 @@ wheels/
 venv/
 env/
 
+# MkDocs build output
+site/
+
 # Test / coverage
 .pytest_cache/
 .coverage
