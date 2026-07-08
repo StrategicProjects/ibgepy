@@ -33,7 +33,7 @@ from .validation import ValidationError
 from .values import parse_ibge_value
 from .variables import ibge_variables
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "ibge_aggregates",

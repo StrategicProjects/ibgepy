@@ -1,14 +1,14 @@
 """Aggregate metadata: variables, classifications, categories and levels."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List
 
 import pandas as pd
 
 from . import _cache, _msg
 from ._client import ibge_request
-from ._format import pluck, pluck_str
+from ._format import pluck_str
 
 
 @dataclass

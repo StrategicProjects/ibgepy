@@ -6,6 +6,7 @@ from typing import Any, Mapping, Optional, Sequence, Union
 import pandas as pd
 
 from . import _msg
+from ._chunking import build_chunk_plan, resolve_chunk_limit
 from ._client import ibge_request
 from ._format import (
     format_classification,
@@ -27,6 +28,7 @@ def ibge_variables(
     classification: Optional[Mapping[str, Any]] = None,
     view: Optional[str] = None,
     validate: bool = True,
+    chunk: Any = True,
 ) -> pd.DataFrame:
     """Retrieve variable results from an aggregate (the package's main function).
 
@@ -50,6 +52,16 @@ def ibge_variables(
     validate:
         If ``True`` (default), validate parameters against the aggregate
         metadata before querying.
+    chunk:
+        Controls automatic splitting of large queries. The IBGE API rejects
+        requests whose result is too large with an HTTP 500 error (the
+        documented limit is 100,000 values, but in practice requests fail
+        above about 50,000). ``True`` (default) estimates the result size
+        (variables x periods x localities x categories) and, when it exceeds
+        50,000 values, transparently splits the query into multiple smaller
+        requests (by periods, then by localities) and combines the results.
+        ``False`` always performs a single request. A positive number works
+        like ``True`` but with a custom per-request value limit.
 
     Returns
     -------
@@ -59,6 +71,8 @@ def ibge_variables(
         ``locality_id``, ``locality_name``, ``locality_level``, ``period``,
         ``value`` (string; use :func:`ibgepy.parse_ibge_value`).
     """
+    meta = None
+
     if validate:
         meta = get_cached_metadata(aggregate)
         validate_query(
@@ -74,23 +88,67 @@ def ibge_variables(
     localities_str = format_localities(localities)
     classification_str = format_classification(classification)
 
-    query = {
-        "localidades": localities_str,
-        "classificacao": classification_str,
-        "view": view,
-    }
+    chunk_limit = resolve_chunk_limit(chunk)
 
-    data = ibge_request(
-        aggregate,
-        "periodos",
-        periods_str,
-        "variaveis",
-        variable_str,
-        query=query,
-        label=f"variables for aggregate {aggregate}",
-    )
+    plan = None
+    if chunk_limit is not None:
+        plan = build_chunk_plan(
+            aggregate,
+            meta,
+            variable=variable,
+            periods=periods,
+            localities=localities,
+            classification=classification,
+            limit=chunk_limit,
+        )
 
-    result = _parse_variables(data, view=view)
+    if plan is None:
+        query = {
+            "localidades": localities_str,
+            "classificacao": classification_str,
+            "view": view,
+        }
+
+        data = ibge_request(
+            aggregate,
+            "periodos",
+            periods_str,
+            "variaveis",
+            variable_str,
+            query=query,
+            label=f"variables for aggregate {aggregate}",
+        )
+
+        result = _parse_variables(data, view=view)
+    else:
+        n_chunks = len(plan)
+        _msg.step(
+            f"Estimated result exceeds the API limit ({chunk_limit:.0f} values); "
+            f"splitting into {n_chunks} request(s)."
+        )
+
+        pieces = []
+        for i, ch in enumerate(plan, start=1):
+            data = ibge_request(
+                aggregate,
+                "periodos",
+                ch["periods_str"],
+                "variaveis",
+                variable_str,
+                query={
+                    "localidades": ch["localities_str"],
+                    "classificacao": classification_str,
+                    "view": view,
+                },
+                label=f"chunk {i}/{n_chunks} for aggregate {aggregate}",
+            )
+            pieces.append(_parse_variables(data, view=view))
+
+        non_empty = [p for p in pieces if not p.empty]
+        result = (
+            pd.concat(non_empty, ignore_index=True) if non_empty else pd.DataFrame()
+        )
+
     _msg.success(f"{len(result)} record(s) retrieved.")
     return result
 
