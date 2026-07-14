@@ -5,6 +5,7 @@ title: "ibgepy: access the IBGE Aggregate Data API (SIDRA) from Python"
 version: 0.2.1
 date-released: 2026-07-14
 license: MIT
+doi: 10.5281/zenodo.21365986
 repository-code: "https://github.com/StrategicProjects/ibgepy"
 url: "https://strategicprojects.github.io/ibgepy/"
 keywords:
