@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "ibgepy: access the IBGE Aggregate Data API (SIDRA) from Python"
+version: 0.2.1
+date-released: 2026-07-14
+license: MIT
+repository-code: "https://github.com/StrategicProjects/ibgepy"
+url: "https://strategicprojects.github.io/ibgepy/"
+keywords:
+  - IBGE
+  - SIDRA
+  - Brazil
+  - statistics
+  - open-data
+  - pandas
+  - python
+authors:
+  - family-names: Leite
+    given-names: "André"
+    email: leite@castlab.org
+    affiliation: "Universidade Federal de Pernambuco"
+  - family-names: Vasconcelos
+    given-names: Hugo
+    email: hugo.vasconcelos@ufpe.br
+    affiliation: "Universidade Federal de Pernambuco"
+  - family-names: Bezerra
+    given-names: Diogo
+    email: diogo.bezerra@ufpe.br
+    affiliation: "Universidade Federal de Pernambuco"
+  - family-names: Wasiliew
+    given-names: Marcos
+    email: marcos.wasilew@gmail.com
+  - family-names: Amorim
+    given-names: Carlos
+    email: carlos.agaf@ufpe.br
+    affiliation: "Universidade Federal de Pernambuco"

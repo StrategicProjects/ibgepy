@@ -111,4 +111,4 @@ with `ibgepy.ibge_clear_cache()`. Silence the progress/success messages with
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Developed by the ibgepy authors.
+MIT © André Leite — see [LICENSE](LICENSE).
