@@ -70,6 +70,13 @@ def ibge_variables(
         ``variable_unit``, classification columns (when present),
         ``locality_id``, ``locality_name``, ``locality_level``, ``period``,
         ``value`` (string; use :func:`ibgepy.parse_ibge_value`).
+
+    Notes
+    -----
+    Large requests can be slow on the server side: queries covering all
+    municipalities (``localities="N6"``, some 5,500 localities) may take one
+    to several minutes *per request* to be answered by the IBGE API, even
+    before any chunking. This is normal — the function is not hanging.
     """
     meta = None
 
