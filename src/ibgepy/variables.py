@@ -124,6 +124,7 @@ def ibge_variables(
             variable_str,
             query=query,
             label=f"variables for aggregate {aggregate}",
+            data_request=True,
         )
 
         result = _parse_variables(data, view=view)
@@ -148,6 +149,7 @@ def ibge_variables(
                     "view": view,
                 },
                 label=f"chunk {i}/{n_chunks} for aggregate {aggregate}",
+                data_request=True,
             )
             pieces.append(_parse_variables(data, view=view))
 

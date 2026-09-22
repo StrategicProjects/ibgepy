@@ -8,7 +8,8 @@ from urllib.parse import unquote
 
 import pandas as pd
 
-from .validation import get_cached_metadata
+from . import _msg
+from .validation import _all_levels, get_cached_metadata
 
 _LEVEL_NAMES = {
     "N1": "Brazil",
@@ -139,10 +140,11 @@ def parse_sidra_url(url: str) -> SidraQuery:
         loc_info.append(
             {
                 "level": loc["level"],
-                "level_name": _LEVEL_NAMES.get(loc["level"], loc["level"]),
+                "level_name": _LEVEL_NAMES.get(loc["level"], "unknown level"),
                 "codes": loc["codes"],
             }
         )
+    _warn_sidra_levels(meta, loc_info)
 
     ibger_call = _build_ibgepy_call(
         aggregate_id, list(var_info["id"]), periods, localities, classifications
@@ -157,6 +159,52 @@ def parse_sidra_url(url: str) -> SidraQuery:
         ibger_call=ibger_call,
         periodicity=meta.periodicity,
     )
+
+
+def _warn_sidra_levels(meta, localities) -> None:
+    """Warn about territorial levels the aggregate does not offer.
+
+    The SIDRA API rejects such URLs; here the parse still succeeds so the
+    query can be inspected, and :func:`fetch_sidra_url` fails through the
+    regular validation.
+    """
+    valid = _all_levels(meta)
+    if not valid or not localities:
+        return
+    invalid = [loc["level"] for loc in localities if loc["level"] not in valid]
+    if invalid:
+        _msg.warn(
+            f"Geographic level(s) {invalid} not available for aggregate {meta.id}. "
+            f"Available levels: {valid}. fetch_sidra_url() will fail for this URL."
+        )
+
+
+def _localities_arg(localities: List[Dict[str, str]]) -> Any:
+    """Translate parsed localities into an ``ibge_variables()`` argument.
+
+    Shared by the printed "equivalent call" and :func:`fetch_sidra_url`, so
+    the two always agree: ``"BR"`` / a level code for a single level, a dict
+    when every level has specific codes, and the API's pipe syntax
+    (``"N1|N3[33,35]"``) when several levels are mixed with ``all``.
+    """
+    if not localities:
+        return "BR"
+    if len(localities) == 1:
+        loc = localities[0]
+        codes = loc["codes"].lower()
+        if codes == "all" and loc["level"] == "N1":
+            return "BR"
+        if codes == "all":
+            return loc["level"]
+        return {loc["level"]: [int(x) for x in loc["codes"].split(",")]}
+
+    if any(loc["codes"].lower() == "all" for loc in localities):
+        parts = [
+            loc["level"] if loc["codes"].lower() == "all" else f"{loc['level']}[{loc['codes']}]"
+            for loc in localities
+        ]
+        return "|".join(parts)
+    return {loc["level"]: [int(x) for x in loc["codes"].split(",")] for loc in localities}
 
 
 def _build_ibgepy_call(aggregate_id, var_ids, periods, localities, classifications) -> str:
@@ -177,19 +225,13 @@ def _build_ibgepy_call(aggregate_id, var_ids, periods, localities, classificatio
             parts += f',\n    periods="{periods}"'
 
     if localities:
-        loc_parts = []
-        for loc in localities:
-            codes = loc["codes"].lower()
-            if codes == "all" and loc["level"] == "N1":
-                loc_parts.append('"BR"')
-            elif codes == "all":
-                loc_parts.append(f'"{loc["level"]}"')
-            else:
-                loc_parts.append(f'"{loc["level"]}": [{loc["codes"]}]')
-        if len(loc_parts) == 1 and loc_parts[0].startswith('"') and ":" not in loc_parts[0]:
-            parts += f",\n    localities={loc_parts[0]}"
+        arg = _localities_arg(localities)
+        if isinstance(arg, str):
+            parts += f',\n    localities="{arg}"'
         else:
-            dict_parts = ", ".join(loc_parts)
+            dict_parts = ", ".join(
+                f'"{level}": {ids[0] if len(ids) == 1 else ids}' for level, ids in arg.items()
+            )
             parts += f",\n    localities={{{dict_parts}}}"
 
     if classifications:
@@ -213,31 +255,7 @@ def fetch_sidra_url(url: str, validate: bool = True) -> pd.DataFrame:
     parsed = parse_sidra_url(url)
 
     # --- Build localities argument ---
-    if not parsed.localities:
-        localities: Any = "BR"
-    elif len(parsed.localities) == 1:
-        loc = parsed.localities[0]
-        codes = loc["codes"].lower()
-        if codes == "all" and loc["level"] == "N1":
-            localities = "BR"
-        elif codes == "all":
-            localities = loc["level"]
-        else:
-            ids = [int(x) for x in loc["codes"].split(",")]
-            localities = {loc["level"]: ids}
-    else:
-        all_levels = [loc for loc in parsed.localities if loc["codes"].lower() == "all"]
-        specific = [loc for loc in parsed.localities if loc["codes"].lower() != "all"]
-        if all_levels:
-            level_strs = [loc["level"] for loc in all_levels]
-            spec_strs = [
-                f"{loc['level']}[{','.join(loc['codes'].split(','))}]" for loc in specific
-            ]
-            localities = "|".join([*level_strs, *spec_strs])
-        else:
-            localities = {
-                loc["level"]: [int(x) for x in loc["codes"].split(",")] for loc in specific
-            }
+    localities: Any = _localities_arg(parsed.localities)
 
     # --- Build classification argument ---
     classification: Optional[Dict[str, Any]] = None

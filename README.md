@@ -35,7 +35,7 @@ import ibgepy
 df = ibgepy.ibge_variables(7060, localities="BR")
 
 # Specific variables for all states
-ibgepy.ibge_variables(1705, variable=[284, 285], localities="N3")
+ibgepy.ibge_variables(1092, variable=[284, 285], localities="N3")
 
 # Specific municipalities (São Paulo, Rio) with a classification
 ibgepy.ibge_variables(
