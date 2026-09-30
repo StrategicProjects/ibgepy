@@ -6,25 +6,38 @@
   "creators": [
     {
       "name": "Leite, André",
-      "affiliation": "Universidade Federal de Pernambuco"
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0002-4718-9766"
     },
     {
       "name": "Vasconcelos, Hugo",
-      "affiliation": "Universidade Federal de Pernambuco"
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0001-6249-0920"
     },
     {
       "name": "Bezerra, Diogo",
-      "affiliation": "Universidade Federal de Pernambuco"
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0002-1216-8674"
     },
     {
-      "name": "Wasiliew, Marcos"
+      "name": "Wasiliew, Marcos",
+      "orcid": "0009-0004-4694-3159"
     },
     {
       "name": "Amorim, Carlos",
-      "affiliation": "Universidade Federal de Pernambuco"
+      "affiliation": "Universidade Federal de Pernambuco",
+      "orcid": "0000-0001-6315-8305"
     }
   ],
-  "keywords": ["IBGE", "SIDRA", "Brazil", "statistics", "open-data", "pandas", "python"],
+  "keywords": [
+    "IBGE",
+    "SIDRA",
+    "Brazil",
+    "statistics",
+    "open-data",
+    "pandas",
+    "python"
+  ],
   "related_identifiers": [
     {
       "relation": "isSupplementTo",
